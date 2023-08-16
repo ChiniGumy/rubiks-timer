@@ -11,14 +11,14 @@ function Timer() {
     const [isSpaceBarPressed, setIsSpaceBarPressed] = useState(false);
     const [elapsedMiliseconds, setElapsedMiliseconds] = useState();
 
-    const intervalValue = useRef(null)
+    const intervalValue = useRef(null);
 
     const startTimer = () => {
 
-        if (isRunning === false) {
+        if (!isRunning) {
             intervalValue.current = setInterval(() => {
-                setTime((time) => time + 1);
-            }, 100);
+                setTime((time) => time + 0.01);
+            }, 10);
             setIsRunning(true)
         }
     }
@@ -67,7 +67,7 @@ function Timer() {
                 
                 if (!isRunning) {
                     if (elapsedSeconds >= 0.8) {
-                        setTimerColor('#38a84a')
+                        setTimerColor('#339643')
                         setIsReadyToRun(true)
                     }
                 }
@@ -83,11 +83,9 @@ function Timer() {
     return (
         <span
             className={'mb-8 text-6xl font-mono'}
-            style={{'color':timerColor}}
+            style={{ color: timerColor }}
         >
-            {
-                time
-            }
+            {time.toFixed(2)}
         </span>
     );
 }
