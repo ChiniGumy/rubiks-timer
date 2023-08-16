@@ -1,7 +1,95 @@
+import { useEffect, useState, useRef } from "react";
+
 function Timer() {
-  return (
-    <span className="mb-8 text-[#787d82] text-6xl font-mono">4.63</span>
-  )
+
+    const [timerColor, setTimerColor] = useState('#787d82');
+    
+    const [time, setTime] = useState(0);
+    const [isRunning, setIsRunning] = useState(false);
+    const [isReadyToRun, setIsReadyToRun] = useState(false);
+
+    const [isSpaceBarPressed, setIsSpaceBarPressed] = useState(false);
+    const [elapsedMiliseconds, setElapsedMiliseconds] = useState();
+
+    const intervalValue = useRef(null)
+
+    const startTimer = () => {
+
+        if (isRunning === false) {
+            intervalValue.current = setInterval(() => {
+                setTime((time) => time + 1);
+            }, 100);
+            setIsRunning(true)
+        }
+    }
+
+    useEffect(() => {
+        document.onkeydown = function (e) {
+            if (e.code === 'Space' && !isSpaceBarPressed) {
+                if (isRunning) {
+                    setIsRunning(false);
+                    clearInterval(intervalValue.current)
+                
+                } else {
+                    setIsSpaceBarPressed(true);
+                    setTimerColor('#c94b4b');
+                    setElapsedMiliseconds(Date.now());
+                }
+            }
+        };
+
+        document.onkeyup = function (e) {
+            if (e.code === 'Space') {
+                console.log('Dejaste de apretar la tecla espacio');
+                setTimerColor('#787d82');
+                setIsSpaceBarPressed(false);
+
+                if (isReadyToRun) {
+                    startTimer();
+                }
+            }
+        };
+
+        // Dentro de los useEffects, los returns sirven para limpiar valores seteados, timers, handlers, etc.
+        
+        return () => {
+            document.onkeydown = null;
+            document.onkeyup = null;
+        };
+
+    }, [elapsedMiliseconds, isSpaceBarPressed, isReadyToRun]);
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            if (isSpaceBarPressed) {
+                const now = Date.now();
+                const elapsedSeconds = (now - elapsedMiliseconds) / 1000;
+                
+                if (!isRunning) {
+                    if (elapsedSeconds >= 0.8) {
+                        setTimerColor('#38a84a')
+                        setIsReadyToRun(true)
+                    }
+                }
+            }
+        }, 100);
+        
+        return () => {
+            clearInterval(interval);
+        };
+
+    }, [isSpaceBarPressed, elapsedMiliseconds]);
+
+    return (
+        <span
+            className={'mb-8 text-6xl font-mono'}
+            style={{'color':timerColor}}
+        >
+            {
+                time
+            }
+        </span>
+    );
 }
 
-export default Timer
+export default Timer;
