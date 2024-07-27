@@ -1,93 +1,110 @@
-import { useEffect, useState, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 
-function Timer() {
+// Possible States
+// 0. IDLE
+// 1. CHECKING
+// 2. SOLVING
+// 3. FINISHED
 
-    const [timerColor, setTimerColor] = useState('#787d82');
-    
-    const [time, setTime] = useState(0);
-    const [isRunning, setIsRunning] = useState(false);
-    const [isReadyToRun, setIsReadyToRun] = useState(false);
+// Long <SPACE> press to move from IDLE to CHECKING
+// Single <SPACE> press to move from CHECKING to SOLVING
+// Single <SPACE> press to move from SOLVING to FINISHED
+// Once FINISHED can only reset by button
 
-    const [isSpaceBarPressed, setIsSpaceBarPressed] = useState(false);
-    const [elapsedMiliseconds, setElapsedMiliseconds] = useState();
+const Stopwatch = () => {
 
-    const intervalValue = useRef(null);
+  const [timerColor, SetTimerColor] = useState('#787d82')
 
-    const startTimer = () => {
+  const [time, setTime] = useState(0);
+  const [canStart, setCanStart] = useState(false);
 
-        if (!isRunning) {
-            intervalValue.current = setInterval(() => {
-                setTime((time) => time + 0.01);
-            }, 10);
-            setIsRunning(true)
+  const [currentState, setCurrentState] = useState("IDLE");
+
+  const intervalRef = useRef(null);
+  const timeoutRef = useRef(null);
+
+  useEffect(() => {
+    const handleKeyUp = (event) => {
+      interact(event);
+    };
+
+    const handleKeyDown = (event) => {
+      if (event.code === "Space") {
+        if (currentState == "CHECKING" && timeoutRef.current == null) {
+          SetTimerColor('#c94b4b')
+          timeoutRef.current = setTimeout(() => {
+            SetTimerColor('#339643')
+            setCanStart(true);
+          }, 1000);
         }
+      }
+    };
+
+    window.addEventListener("keyup", handleKeyUp);
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("keyup", handleKeyUp);
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [currentState, canStart]);
+
+  const interact = (event) => {
+    if (event.code === "Space") {
+      
+      switch (currentState) {
+        case "IDLE":
+          setCurrentState("CHECKING");
+          intervalRef.current = setInterval(() => {
+            setTime((prevTime) => prevTime + 1);
+          }, 1000);
+          break;
+
+        case "CHECKING":
+          SetTimerColor('#787d82')
+          if (!canStart) {
+            clearTimeout(timeoutRef.current);
+            timeoutRef.current = null;
+            return;
+          }
+          setCurrentState("SOLVING");
+          clearInterval(intervalRef.current);
+          setTime(0);
+          intervalRef.current = setInterval(() => {
+            setTime((prevTime) => prevTime + 1);
+          }, 10);
+          SetTimerColor('#787d82')
+          break;
+          
+        case "SOLVING":
+          clearInterval(intervalRef.current);
+          setCurrentState("FINISHED");
+          break;
+      }
     }
+  };
 
-    useEffect(() => {
-        document.onkeydown = function (e) {
-            if (e.code === 'Space' && !isSpaceBarPressed) {
-                if (isRunning) {
-                    setIsRunning(false);
-                    clearInterval(intervalValue.current)
-                
-                } else {
-                    setIsSpaceBarPressed(true);
-                    setTimerColor('#c94b4b');
-                    setElapsedMiliseconds(Date.now());
-                }
-            }
-        };
+  const resetStopwatch = () => {
+    clearInterval(intervalRef.current);
+    setCanStart(false);
+    setTime(0);
+    setCurrentState("IDLE");
+  };
 
-        document.onkeyup = function (e) {
-            if (e.code === 'Space') {
-                console.log('Dejaste de apretar la tecla espacio');
-                setTimerColor('#787d82');
-                setIsSpaceBarPressed(false);
+  return (
+    <h1 
+      className={'mb-8 text-6xl font-mono'}
+      style={{color:timerColor}}
+    >
 
-                if (isReadyToRun) {
-                    startTimer();
-                }
-            }
-        };
+      {currentState === "CHECKING"
+        ? `${time}`
+        : `${(time / 100).toFixed(2)}`
+      }
 
-        // Dentro de los useEffects, los returns sirven para limpiar valores seteados, timers, handlers, etc.
-        
-        return () => {
-            document.onkeydown = null;
-            document.onkeyup = null;
-        };
+    </h1>
 
-    }, [elapsedMiliseconds, isSpaceBarPressed, isReadyToRun]);
+  );
+};
 
-    useEffect(() => {
-        const interval = setInterval(() => {
-            if (isSpaceBarPressed) {
-                const now = Date.now();
-                const elapsedSeconds = (now - elapsedMiliseconds) / 1000;
-                
-                if (!isRunning) {
-                    if (elapsedSeconds >= 0.8) {
-                        setTimerColor('#339643')
-                        setIsReadyToRun(true)
-                    }
-                }
-            }
-        }, 100);
-        
-        return () => {
-            clearInterval(interval);
-        };
-
-    }, [isSpaceBarPressed, elapsedMiliseconds]);
-
-    return (
-        <span
-            className={'mb-8 text-6xl font-mono'}
-            style={{ color: timerColor }}
-        >
-            {time.toFixed(2)}
-        </span>
-    );
-}
-
-export default Timer;
+export default Stopwatch;

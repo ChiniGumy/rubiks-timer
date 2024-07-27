@@ -4,7 +4,7 @@ import DeleteSolveButton from '../components/DeleteSolveButton';
 
 function Buttons() {
     return (
-        <div className='flex items-center'>
+        <div className='flex items-center mt-8'>
             <DnfButton />
             <PlusTwoButton />
             <DeleteSolveButton />    
